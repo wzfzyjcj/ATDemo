@@ -9,10 +9,12 @@ import UserProfile from './components/UserProfile';
 import TeacherHome from './components/TeacherHome';
 import GuidedTour from './components/GuidedTour';
 import WelcomeModal from './components/WelcomeModal';
+import Login from './components/Login';
 
 type ModuleType = 'home' | 'profile' | 'knowledge' | 'qa' | 'code' | 'quiz';
 
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentModule, setCurrentModule] = useState<ModuleType>('home');
   const [isTeacher, setIsTeacher] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -21,6 +23,16 @@ export default function App() {
   const [showTour, setShowTour] = useState(false); // Changed to false by default
   const [showWelcome, setShowWelcome] = useState(true); // 欢迎弹窗
   const [selectedCourse, setSelectedCourse] = useState('操作系统'); // 当前选择的课程
+
+  const handleLogin = (username: string, password: string, role: 'student' | 'teacher') => {
+    // 这里应该调用实际的登录API
+    setIsTeacher(role === 'teacher');
+    setIsLoggedIn(true);
+  };
+
+  if (!isLoggedIn) {
+    return <Login onLogin={handleLogin} />;
+  }
   
   const courses = ['操作系统', '数据结构', '计算机网络', '数据库原理'];
 

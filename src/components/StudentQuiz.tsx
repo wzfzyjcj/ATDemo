@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, CheckCircle, AlertCircle, BookOpen, Target, Zap, Search, ChevronRight, Play, RotateCcw, Sparkles, Filter, Code, Circle, XCircle, TrendingUp, Award, Brain } from 'lucide-react';
+import { Clock, CheckCircle, AlertCircle, BookOpen, Target, Zap, Search, ChevronRight, Play, RotateCcw, Sparkles, Filter, Code, Circle, XCircle, TrendingUp, Award, Brain, User, X, Plus } from 'lucide-react';
 
 export default function StudentQuiz() {
   const [activeMode, setActiveMode] = useState<'class' | 'homework' | 'practice'>('class');
@@ -92,6 +92,17 @@ export default function StudentQuiz() {
 
 // 课堂检测列表
 function ClassTestList({ onSelectQuiz }: { onSelectQuiz: (quiz: any) => void }) {
+  const [showNewTestAlert, setShowNewTestAlert] = useState(true);
+  const [newTests, setNewTests] = useState([
+    { 
+      id: 3, 
+      title: '进程通信专题测验', 
+      time: '刚刚发布',
+      duration: 25,
+      questions: 6
+    }
+  ]);
+
   const tests = [
     { 
       id: 1, 
@@ -117,6 +128,36 @@ function ClassTestList({ onSelectQuiz }: { onSelectQuiz: (quiz: any) => void }) 
 
   return (
     <div className="p-6 space-y-4">
+      {/* 新课堂测验提示 */}
+      {showNewTestAlert && newTests.length > 0 && (
+        <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-300 rounded-lg p-4 shadow-md">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 flex-1">
+              <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-white font-bold text-sm">!</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-orange-900 mb-2">新的课堂测验已发布</h3>
+                {newTests.map((test) => (
+                  <div key={test.id} className="mb-2 last:mb-0">
+                    <p className="text-sm text-orange-800 font-medium">
+                      📝 {test.title} - {test.questions}题，{test.duration}分钟
+                    </p>
+                    <p className="text-xs text-orange-600 mt-1">{test.time}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={() => setShowNewTestAlert(false)}
+              className="text-orange-600 hover:text-orange-800 flex-shrink-0"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
           <Clock className="w-5 h-5 text-blue-600 mt-0.5" />
@@ -202,6 +243,17 @@ function ClassTestList({ onSelectQuiz }: { onSelectQuiz: (quiz: any) => void }) 
 
 // 课后作业列表
 function HomeworkList({ onSelectQuiz }: { onSelectQuiz: (quiz: any) => void }) {
+  const [showNewHomeworkAlert, setShowNewHomeworkAlert] = useState(true);
+  const [newHomeworks, setNewHomeworks] = useState([
+    { 
+      id: 4, 
+      title: 'Lab4课后作业-内存管理', 
+      time: '2小时前发布',
+      deadline: '2024-02-25 23:59',
+      questions: 8
+    }
+  ]);
+
   const homeworks = [
     { 
       id: 1, 
@@ -226,6 +278,36 @@ function HomeworkList({ onSelectQuiz }: { onSelectQuiz: (quiz: any) => void }) {
 
   return (
     <div className="p-6 space-y-4">
+      {/* 新课后作业提示 */}
+      {showNewHomeworkAlert && newHomeworks.length > 0 && (
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-300 rounded-lg p-4 shadow-md">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 flex-1">
+              <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-white font-bold text-sm">!</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-purple-900 mb-2">新的课后作业已发布</h3>
+                {newHomeworks.map((hw) => (
+                  <div key={hw.id} className="mb-2 last:mb-0">
+                    <p className="text-sm text-purple-800 font-medium">
+                      📝 {hw.title} - {hw.questions}题，截止时间：{hw.deadline}
+                    </p>
+                    <p className="text-xs text-purple-600 mt-1">{hw.time}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={() => setShowNewHomeworkAlert(false)}
+              className="text-purple-600 hover:text-purple-800 flex-shrink-0"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
           <BookOpen className="w-5 h-5 text-purple-600 mt-0.5" />
@@ -563,19 +645,26 @@ function SmartCompose({ onStart, onBack }: { onStart: (quiz: any) => void; onBac
 
 // 题库选择
 function QuestionBank({ onStart, onBack }: { onStart: (quiz: any) => void; onBack: () => void }) {
+  const [selectedBank, setSelectedBank] = useState<'my' | 'teacher' | 'all'>('all');
   const [selectedKnowledge, setSelectedKnowledge] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [selectedQuestions, setSelectedQuestions] = useState<number[]>([]);
 
   const questions = [
-    { id: 1, title: '解释进程与线程的区别', type: '选择题', difficulty: 'easy', knowledge: '进程管理', source: '教师出题' },
-    { id: 2, title: '实现一个简单的生产者消费者模型', type: '编程题', difficulty: 'hard', knowledge: '并发控制', source: 'AI生成' },
-    { id: 3, title: 'LRU页面置换算法的工作原理', type: '选择题', difficulty: 'medium', knowledge: '内存管理', source: 'AI检索' },
-    { id: 4, title: '分析死锁产生的四个必要条件', type: '选择题', difficulty: 'medium', knowledge: '并发控制', source: '教师出题' },
+    { id: 1, title: '解释进程与线程的区别', type: '选择题', difficulty: 'easy', knowledge: '进程管理', source: '教师出题', bank: 'teacher' },
+    { id: 2, title: '实现一个简单的生产者消费者模型', type: '编程题', difficulty: 'hard', knowledge: '并发控制', source: 'AI生成', bank: 'my' },
+    { id: 3, title: 'LRU页面置换算法的工作原理', type: '选择题', difficulty: 'medium', knowledge: '内存管理', source: 'AI检索', bank: 'teacher' },
+    { id: 4, title: '分析死锁产生的四个必要条件', type: '选择题', difficulty: 'medium', knowledge: '并发控制', source: '教师出题', bank: 'teacher' },
+    { id: 5, title: '进程调度算法比较', type: '选择题', difficulty: 'medium', knowledge: '进程管理', source: '我的收藏', bank: 'my' },
+    { id: 6, title: '虚拟内存实现原理', type: '编程题', difficulty: 'hard', knowledge: '内存管理', source: 'AI生成', bank: 'my' },
   ];
 
   const filteredQuestions = questions.filter(q => {
+    // 题库筛选
+    if (selectedBank === 'my' && q.bank !== 'my') return false;
+    if (selectedBank === 'teacher' && q.bank !== 'teacher') return false;
+    // 其他筛选条件
     if (selectedKnowledge !== 'all' && q.knowledge !== selectedKnowledge) return false;
     if (selectedDifficulty !== 'all' && q.difficulty !== selectedDifficulty) return false;
     if (selectedType !== 'all' && q.type !== selectedType) return false;
@@ -593,6 +682,52 @@ function QuestionBank({ onStart, onBack }: { onStart: (quiz: any) => void; onBac
         <div className="bg-gradient-to-r from-green-500 to-teal-600 rounded-xl p-6 text-white mb-6">
           <h2 className="text-2xl font-bold mb-2">📚 题库选择</h2>
           <p className="text-sm opacity-90">从题库中选择题目，自由组合练习内容</p>
+        </div>
+
+        {/* 题库分类选择 */}
+        <div className="bg-white rounded-lg border border-slate-200 p-4 mb-4">
+          <label className="block text-sm font-medium text-slate-700 mb-3">选择题库</label>
+          <div className="grid grid-cols-3 gap-3">
+            <button
+              onClick={() => setSelectedBank('my')}
+              className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                selectedBank === 'my'
+                  ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                  : 'border-slate-200 text-slate-600 hover:border-slate-300'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                <span className="font-medium">我的题库</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setSelectedBank('teacher')}
+              className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                selectedBank === 'teacher'
+                  ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                  : 'border-slate-200 text-slate-600 hover:border-slate-300'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <User className="w-4 h-4" />
+                <span className="font-medium">教师题库</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setSelectedBank('all')}
+              className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                selectedBank === 'all'
+                  ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                  : 'border-slate-200 text-slate-600 hover:border-slate-300'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Search className="w-4 h-4" />
+                <span className="font-medium">全部题库</span>
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* 筛选器 */}
@@ -747,6 +882,26 @@ function WrongQuestionBook({ onStart, onBack }: { onStart: (quiz: any) => void; 
   ];
 
   const [selectedWrong, setSelectedWrong] = useState<number[]>([]);
+  const [showSimilarQuestions, setShowSimilarQuestions] = useState(false);
+  const [similarQuestions, setSimilarQuestions] = useState<any[]>([]);
+  const [addedToMyBank, setAddedToMyBank] = useState<number[]>([]);
+
+  const handleGenerateSimilar = () => {
+    // 模拟AI生成相似题目
+    const generated = [
+      { id: 101, title: '死锁预防策略有哪些？', type: '选择题', knowledge: '并发控制', difficulty: 'medium' },
+      { id: 102, title: '如何避免死锁的发生？', type: '选择题', knowledge: '并发控制', difficulty: 'hard' },
+      { id: 103, title: '实现一个死锁检测算法', type: '编程题', knowledge: '并发控制', difficulty: 'hard' },
+    ];
+    setSimilarQuestions(generated);
+    setShowSimilarQuestions(true);
+  };
+
+  const handleAddToMyBank = (questionId: number) => {
+    setAddedToMyBank([...addedToMyBank, questionId]);
+    // 这里应该调用API添加到我的题库
+    alert('已添加到我的题库');
+  };
 
   return (
     <div className="p-6">
@@ -826,6 +981,71 @@ function WrongQuestionBook({ onStart, onBack }: { onStart: (quiz: any) => void; 
           </div>
         </div>
 
+        {/* AI推荐相似题目区域 */}
+        {showSimilarQuestions && similarQuestions.length > 0 && (
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-lg p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-indigo-900 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-indigo-600" />
+                AI推荐相似题目
+              </h3>
+              <button
+                onClick={() => setShowSimilarQuestions(false)}
+                className="text-indigo-600 hover:text-indigo-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              {similarQuestions.map((q) => (
+                <div key={q.id} className="bg-white rounded-lg border border-indigo-200 p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-slate-900 mb-2">{q.title}</h4>
+                      <div className="flex items-center gap-3 text-xs">
+                        <span className={`px-2 py-1 rounded ${
+                          q.type === '编程题' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {q.type}
+                        </span>
+                        <span className="text-slate-500">{q.knowledge}</span>
+                        <span className={`px-2 py-1 rounded ${
+                          q.difficulty === 'hard' ? 'bg-red-100 text-red-700' :
+                          q.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-green-100 text-green-700'
+                        }`}>
+                          {q.difficulty === 'hard' ? '困难' : q.difficulty === 'medium' ? '中等' : '简单'}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleAddToMyBank(q.id)}
+                      disabled={addedToMyBank.includes(q.id)}
+                      className={`ml-4 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                        addedToMyBank.includes(q.id)
+                          ? 'bg-green-100 text-green-700 cursor-not-allowed'
+                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      }`}
+                    >
+                      {addedToMyBank.includes(q.id) ? (
+                        <>
+                          <CheckCircle className="w-4 h-4" />
+                          已添加
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4" />
+                          添加到我的题库
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4">
           <button
             onClick={() => {
@@ -844,14 +1064,7 @@ function WrongQuestionBook({ onStart, onBack }: { onStart: (quiz: any) => void; 
             重练选中题目 ({selectedWrong.length})
           </button>
           <button
-            onClick={() => {
-              onStart({
-                title: 'AI推荐相似题目',
-                mode: 'practice',
-                type: 'retry-similar',
-                questions: generateQuestions(5)
-              });
-            }}
+            onClick={handleGenerateSimilar}
             className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex items-center justify-center gap-2"
           >
             <Sparkles className="w-4 h-4" />

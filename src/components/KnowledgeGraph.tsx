@@ -523,74 +523,90 @@ export default function KnowledgeGraph({ isTeacher, onNavigateToQA, onAskTeacher
               <p className="text-xs text-slate-500 mt-1">点击节点查看详细信息</p>
             </div>
 
-            <div className="flex-1 p-8 overflow-auto flex items-center justify-center">
+            <div className="flex-1 p-8 overflow-auto">
               {selectedNode ? (
-                <div className="relative w-full h-[500px]">
-                  <svg className="w-full h-full">
-                    {/* 中心节点 */}
-                    <circle cx="400" cy="250" r="60" fill="#6366f1" />
-                    <text x="400" y="250" textAnchor="middle" fill="white" className="text-sm font-semibold" dy="0.3em">
-                      {selectedNode.name}
-                    </text>
-                    
-                    {/* 前置知识点 - 左上方 */}
-                    {selectedNode.prerequisites && selectedNode.prerequisites.map((prereq, idx) => {
-                      const angle = -120 + idx * 30;
-                      const rad = (angle * Math.PI) / 180;
-                      const x = 400 + 180 * Math.cos(rad);
-                      const y = 250 + 180 * Math.sin(rad);
-                      return (
-                        <g key={`prereq-${idx}`}>
-                          <line x1={x} y1={y} x2="360" y2="220" stroke="#10b981" strokeWidth="2" markerEnd="url(#arrowhead)" />
-                          <circle cx={x} cy={y} r="40" fill="#10b981" className="cursor-pointer hover:opacity-80" />
-                          <text x={x} y={y} textAnchor="middle" fill="white" className="text-xs pointer-events-none" dy="0.3em">
-                            {prereq}
-                          </text>
-                        </g>
-                      );
-                    })}
-                    
-                    {/* 相关知识点 - 右侧分布 */}
-                    {selectedNode.related && selectedNode.related.map((rel, idx) => {
-                      const angle = -60 + idx * 60;
-                      const rad = (angle * Math.PI) / 180;
-                      const x = 400 + 200 * Math.cos(rad);
-                      const y = 250 + 200 * Math.sin(rad);
-                      return (
-                        <g key={`rel-${idx}`}>
-                          <line x1="400" y1="250" x2={x} y2={y} stroke="#cbd5e1" strokeWidth="2" strokeDasharray="5,5" />
-                          <circle cx={x} cy={y} r="40" fill="#f59e0b" className="cursor-pointer hover:opacity-80" />
-                          <text x={x} y={y} textAnchor="middle" fill="white" className="text-xs pointer-events-none" dy="0.3em">
-                            {rel}
-                          </text>
-                        </g>
-                      );
-                    })}
-                    
-                    {/* 后续知识点 - 下方 */}
-                    {selectedNode.nextTopics && selectedNode.nextTopics.map((next, idx) => {
-                      const x = 300 + idx * 120;
-                      const y = 420;
-                      return (
-                        <g key={`next-${idx}`}>
-                          <line x1="400" y1="310" x2={x} y2={y - 40} stroke="#8b5cf6" strokeWidth="2" markerEnd="url(#arrowhead-purple)" />
-                          <circle cx={x} cy={y} r="35" fill="#8b5cf6" className="cursor-pointer hover:opacity-80" />
-                          <text x={x} y={y} textAnchor="middle" fill="white" className="text-xs pointer-events-none" dy="0.3em">
-                            {next}
-                          </text>
-                        </g>
-                      );
-                    })}
-                    
-                    {/* 箭头定义 */}
-                    <defs>
-                      <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
-                        <polygon points="0 0, 10 3, 0 6" fill="#10b981" />
-                      </marker>
-                      <marker id="arrowhead-purple" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
-                        <polygon points="0 0, 10 3, 0 6" fill="#8b5cf6" />
-                      </marker>
-                    </defs>
+                <div className="relative w-full h-full min-h-[500px] flex items-center justify-center">
+                  <svg className="w-full h-full" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet">
+                    {/* 中心节点位置 */}
+                    <g transform="translate(400, 300)">
+                      {/* 中心节点 */}
+                      <circle cx="0" cy="0" r="50" fill="#6366f1" />
+                      <text x="0" y="0" textAnchor="middle" fill="white" className="text-sm font-semibold" dy="0.3em">
+                        {selectedNode.name.length > 8 ? selectedNode.name.substring(0, 8) + '...' : selectedNode.name}
+                      </text>
+                      
+                      {/* 前置知识点 - 左上方 */}
+                      {selectedNode.prerequisites && selectedNode.prerequisites.map((prereq, idx) => {
+                        const totalPrereqs = selectedNode.prerequisites?.length || 1;
+                        const angle = -135 + (idx * (90 / Math.max(1, totalPrereqs - 1)));
+                        const rad = (angle * Math.PI) / 180;
+                        const radius = 150;
+                        const x = radius * Math.cos(rad);
+                        const y = radius * Math.sin(rad);
+                        const textX = x + (x > 0 ? 50 : -50);
+                        const textY = y;
+                        return (
+                          <g key={`prereq-${idx}`}>
+                            <line x1={x} y1={y} x2="-30" y2="-30" stroke="#10b981" strokeWidth="2" markerEnd="url(#arrowhead)" />
+                            <circle cx={x} cy={y} r="35" fill="#10b981" className="cursor-pointer hover:opacity-80" />
+                            <text x={textX} y={textY} textAnchor={x > 0 ? "start" : "end"} fill="#1f2937" className="text-xs font-medium pointer-events-none" dy="0.3em">
+                              {prereq.length > 10 ? prereq.substring(0, 10) + '...' : prereq}
+                            </text>
+                          </g>
+                        );
+                      })}
+                      
+                      {/* 相关知识点 - 右侧分布 */}
+                      {selectedNode.related && selectedNode.related.map((rel, idx) => {
+                        const totalRelated = selectedNode.related?.length || 1;
+                        const angle = -45 + (idx * (90 / Math.max(1, totalRelated - 1)));
+                        const rad = (angle * Math.PI) / 180;
+                        const radius = 160;
+                        const x = radius * Math.cos(rad);
+                        const y = radius * Math.sin(rad);
+                        const textX = x + (x > 0 ? 50 : -50);
+                        const textY = y;
+                        return (
+                          <g key={`rel-${idx}`}>
+                            <line x1="0" y1="0" x2={x} y2={y} stroke="#cbd5e1" strokeWidth="2" strokeDasharray="5,5" />
+                            <circle cx={x} cy={y} r="35" fill="#f59e0b" className="cursor-pointer hover:opacity-80" />
+                            <text x={textX} y={textY} textAnchor={x > 0 ? "start" : "end"} fill="#1f2937" className="text-xs font-medium pointer-events-none" dy="0.3em">
+                              {rel.length > 10 ? rel.substring(0, 10) + '...' : rel}
+                            </text>
+                          </g>
+                        );
+                      })}
+                      
+                      {/* 后续知识点 - 下方 */}
+                      {selectedNode.nextTopics && selectedNode.nextTopics.map((next, idx) => {
+                        const totalNext = selectedNode.nextTopics?.length || 1;
+                        const spacing = Math.min(140, 280 / totalNext);
+                        const startX = -(totalNext - 1) * spacing / 2;
+                        const x = startX + idx * spacing;
+                        const y = 150;
+                        const textX = x;
+                        const textY = y + 50;
+                        return (
+                          <g key={`next-${idx}`}>
+                            <line x1="0" y1="50" x2={x} y2={y - 35} stroke="#8b5cf6" strokeWidth="2" markerEnd="url(#arrowhead-purple)" />
+                            <circle cx={x} cy={y} r="35" fill="#8b5cf6" className="cursor-pointer hover:opacity-80" />
+                            <text x={textX} y={textY} textAnchor="middle" fill="#1f2937" className="text-xs font-medium pointer-events-none" dy="0.3em">
+                              {next.length > 10 ? next.substring(0, 10) + '...' : next}
+                            </text>
+                          </g>
+                        );
+                      })}
+                      
+                      {/* 箭头定义 */}
+                      <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                          <polygon points="0 0, 10 3, 0 6" fill="#10b981" />
+                        </marker>
+                        <marker id="arrowhead-purple" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                          <polygon points="0 0, 10 3, 0 6" fill="#8b5cf6" />
+                        </marker>
+                      </defs>
+                    </g>
                   </svg>
                   
                   <div className="absolute bottom-4 left-4 bg-white rounded-lg p-3 shadow-lg border border-slate-200">
