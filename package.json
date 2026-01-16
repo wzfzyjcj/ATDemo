@@ -1,7 +1,7 @@
 
   {
-      "name": "High-Fidelity Prototype Design",
-      "version": "0.1.0",
+      "name": "ai-personalized-learning-path",
+      "version": "1.0.0",
       "private": true,
       "dependencies": {
           "@radix-ui/react-accordion": "^1.2.3",
