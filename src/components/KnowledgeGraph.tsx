@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronRight, ChevronDown, BookOpen, Video, FileText, Code, Link2, Plus, Upload, Mic, X, MessageSquare } from 'lucide-react';
+import { ChevronRight, ChevronDown, BookOpen, Video, FileText, Code, Link2, Plus, Minus, RotateCcw, Upload, Mic, X, MessageSquare } from 'lucide-react';
 import AskTeacherModal from './AskTeacherModal';
 
 interface KnowledgeGraphProps {
@@ -261,11 +261,49 @@ export default function KnowledgeGraph({ isTeacher, onNavigateToQA, onAskTeacher
   const [expandedNodes, setExpandedNodes] = useState<string[]>(['p1', 'p2', 'p3']);
   const [showAskModal, setShowAskModal] = useState(false);
 
+  // 缩放相关状态
+  const [zoom, setZoom] = useState(1);
+  const [minZoom] = useState(0.5);
+  const [maxZoom] = useState(3);
+  const [isPanning, setIsPanning] = useState(false);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
   const currentCourseData = courseKnowledgeData[selectedCourse] || courseKnowledgeData['操作系统'];
+
+  // 生成格式化的问题
+  const generateFormattedQuestion = (node: KnowledgeNode): string => {
+    const { name, level, mastery } = node;
+
+    let questionTemplate = '';
+
+    // 根据节点层级生成不同的问题
+    if (level === 1) {
+      questionTemplate = `请系统性地解释【${name}】这个知识领域的核心概念、关键技术和应用场景。`;
+    } else if (level === 2) {
+      questionTemplate = `请详细解释【${name}】的概念、工作原理和实际应用。`;
+    } else {
+      questionTemplate = `请解释【${name}】的具体实现方法和技术细节。`;
+    }
+
+    // 根据掌握度添加针对性内容（学生端）
+    if (mastery !== undefined) {
+      if (mastery < 60) {
+        questionTemplate += `\n\n我对这个知识点的掌握度较低（${mastery}%），请用通俗易懂的语言讲解，并提供学习建议。`;
+      } else if (mastery < 80) {
+        questionTemplate += `\n\n我对这个知识点有一定了解（掌握度${mastery}%），请重点讲解其中的难点和易错点。`;
+      } else {
+        questionTemplate += `\n\n我对这个知识点已经比较熟悉（掌握度${mastery}%），请讲解一些高级应用和优化技巧。`;
+      }
+    }
+
+    return questionTemplate;
+  };
 
   const handleNavigateToQA = () => {
     if (selectedNode && onNavigateToQA) {
-      onNavigateToQA(`请解释"${selectedNode.name}"的概念和应用`);
+      const formattedQuestion = generateFormattedQuestion(selectedNode);
+      onNavigateToQA(formattedQuestion);
     }
   };
 
@@ -274,6 +312,43 @@ export default function KnowledgeGraph({ isTeacher, onNavigateToQA, onAskTeacher
       onAskTeacher(question);
     }
     setShowAskModal(false);
+  };
+
+  // 缩放控制函数
+  const handleZoomIn = () => {
+    setZoom(prev => Math.min(prev + 0.2, maxZoom));
+  };
+
+  const handleZoomOut = () => {
+    setZoom(prev => Math.max(prev - 0.2, minZoom));
+  };
+
+  const handleZoomReset = () => {
+    setZoom(1);
+    setPanOffset({ x: 0, y: 0 });
+  };
+
+  const handleWheel = (e: React.WheelEvent<SVGSVGElement>) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    setZoom(prev => Math.max(minZoom, Math.min(maxZoom, prev + delta)));
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
+    setIsPanning(true);
+    setDragStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!isPanning) return;
+    setPanOffset({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y,
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
   };
 
   const toggleTopic = (topicId: string) => {
@@ -526,86 +601,128 @@ export default function KnowledgeGraph({ isTeacher, onNavigateToQA, onAskTeacher
             <div className="flex-1 p-8 overflow-auto">
               {selectedNode ? (
                 <div className="relative w-full h-full min-h-[500px] flex items-center justify-center">
-                  <svg className="w-full h-full" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet">
-                    {/* 中心节点位置 */}
-                    <g transform="translate(400, 300)">
-                      {/* 中心节点 */}
-                      <circle cx="0" cy="0" r="50" fill="#6366f1" />
-                      <text x="0" y="0" textAnchor="middle" fill="white" className="text-sm font-semibold" dy="0.3em">
-                        {selectedNode.name.length > 8 ? selectedNode.name.substring(0, 8) + '...' : selectedNode.name}
-                      </text>
-                      
-                      {/* 前置知识点 - 左上方 */}
-                      {selectedNode.prerequisites && selectedNode.prerequisites.map((prereq, idx) => {
-                        const totalPrereqs = selectedNode.prerequisites?.length || 1;
-                        const angle = -135 + (idx * (90 / Math.max(1, totalPrereqs - 1)));
-                        const rad = (angle * Math.PI) / 180;
-                        const radius = 150;
-                        const x = radius * Math.cos(rad);
-                        const y = radius * Math.sin(rad);
-                        const textX = x + (x > 0 ? 50 : -50);
-                        const textY = y;
-                        return (
-                          <g key={`prereq-${idx}`}>
-                            <line x1={x} y1={y} x2="-30" y2="-30" stroke="#10b981" strokeWidth="2" markerEnd="url(#arrowhead)" />
-                            <circle cx={x} cy={y} r="35" fill="#10b981" className="cursor-pointer hover:opacity-80" />
-                            <text x={textX} y={textY} textAnchor={x > 0 ? "start" : "end"} fill="#1f2937" className="text-xs font-medium pointer-events-none" dy="0.3em">
-                              {prereq.length > 10 ? prereq.substring(0, 10) + '...' : prereq}
-                            </text>
-                          </g>
-                        );
-                      })}
-                      
-                      {/* 相关知识点 - 右侧分布 */}
-                      {selectedNode.related && selectedNode.related.map((rel, idx) => {
-                        const totalRelated = selectedNode.related?.length || 1;
-                        const angle = -45 + (idx * (90 / Math.max(1, totalRelated - 1)));
-                        const rad = (angle * Math.PI) / 180;
-                        const radius = 160;
-                        const x = radius * Math.cos(rad);
-                        const y = radius * Math.sin(rad);
-                        const textX = x + (x > 0 ? 50 : -50);
-                        const textY = y;
-                        return (
-                          <g key={`rel-${idx}`}>
-                            <line x1="0" y1="0" x2={x} y2={y} stroke="#cbd5e1" strokeWidth="2" strokeDasharray="5,5" />
-                            <circle cx={x} cy={y} r="35" fill="#f59e0b" className="cursor-pointer hover:opacity-80" />
-                            <text x={textX} y={textY} textAnchor={x > 0 ? "start" : "end"} fill="#1f2937" className="text-xs font-medium pointer-events-none" dy="0.3em">
-                              {rel.length > 10 ? rel.substring(0, 10) + '...' : rel}
-                            </text>
-                          </g>
-                        );
-                      })}
-                      
-                      {/* 后续知识点 - 下方 */}
-                      {selectedNode.nextTopics && selectedNode.nextTopics.map((next, idx) => {
-                        const totalNext = selectedNode.nextTopics?.length || 1;
-                        const spacing = Math.min(140, 280 / totalNext);
-                        const startX = -(totalNext - 1) * spacing / 2;
-                        const x = startX + idx * spacing;
-                        const y = 150;
-                        const textX = x;
-                        const textY = y + 50;
-                        return (
-                          <g key={`next-${idx}`}>
-                            <line x1="0" y1="50" x2={x} y2={y - 35} stroke="#8b5cf6" strokeWidth="2" markerEnd="url(#arrowhead-purple)" />
-                            <circle cx={x} cy={y} r="35" fill="#8b5cf6" className="cursor-pointer hover:opacity-80" />
-                            <text x={textX} y={textY} textAnchor="middle" fill="#1f2937" className="text-xs font-medium pointer-events-none" dy="0.3em">
-                              {next.length > 10 ? next.substring(0, 10) + '...' : next}
-                            </text>
-                          </g>
-                        );
-                      })}
-                      
-                      {/* 箭头定义 */}
-                      <defs>
-                        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
-                          <polygon points="0 0, 10 3, 0 6" fill="#10b981" />
-                        </marker>
-                        <marker id="arrowhead-purple" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
-                          <polygon points="0 0, 10 3, 0 6" fill="#8b5cf6" />
-                        </marker>
-                      </defs>
+                  {/* 缩放控制按钮 */}
+                  <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg border border-slate-200 p-2 space-y-1 z-10">
+                    <button
+                      onClick={handleZoomIn}
+                      disabled={zoom >= maxZoom}
+                      className="w-full p-2 hover:bg-slate-100 rounded text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      title="放大"
+                    >
+                      <Plus className="w-5 h-5 mx-auto" />
+                    </button>
+                    <button
+                      onClick={handleZoomOut}
+                      disabled={zoom <= minZoom}
+                      className="w-full p-2 hover:bg-slate-100 rounded text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      title="缩小"
+                    >
+                      <Minus className="w-5 h-5 mx-auto" />
+                    </button>
+                    <button
+                      onClick={handleZoomReset}
+                      className="w-full p-2 hover:bg-slate-100 rounded text-slate-700 transition-colors"
+                      title="重置视图"
+                    >
+                      <RotateCcw className="w-5 h-5 mx-auto" />
+                    </button>
+                    <div className="pt-1 border-t border-slate-200 text-center">
+                      <span className="text-xs font-medium text-slate-600">{Math.round(zoom * 100)}%</span>
+                    </div>
+                  </div>
+
+                  <svg
+                    className="w-full h-full"
+                    viewBox="0 0 800 600"
+                    preserveAspectRatio="xMidYMid meet"
+                    onWheel={handleWheel}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
+                  >
+                    <g transform={`translate(${panOffset.x}, ${panOffset.y}) scale(${zoom})`}>
+                      {/* 中心节点位置 */}
+                      <g transform="translate(400, 300)">{/* SVG 内容保持不变 */}
+                        {/* 中心节点 */}
+                        <circle cx="0" cy="0" r="50" fill="#6366f1" />
+                        <text x="0" y="0" textAnchor="middle" fill="white" className="text-sm font-semibold" dy="0.3em">
+                          {selectedNode.name.length > 8 ? selectedNode.name.substring(0, 8) + '...' : selectedNode.name}
+                        </text>
+
+                        {/* 前置知识点 - 左上方 */}
+                        {selectedNode.prerequisites && selectedNode.prerequisites.map((prereq, idx) => {
+                          const totalPrereqs = selectedNode.prerequisites?.length || 1;
+                          const angle = -135 + (idx * (90 / Math.max(1, totalPrereqs - 1)));
+                          const rad = (angle * Math.PI) / 180;
+                          const radius = 150;
+                          const x = radius * Math.cos(rad);
+                          const y = radius * Math.sin(rad);
+                          const textX = x + (x > 0 ? 50 : -50);
+                          const textY = y;
+                          return (
+                            <g key={`prereq-${idx}`}>
+                              <line x1={x} y1={y} x2="-30" y2="-30" stroke="#10b981" strokeWidth="2" markerEnd="url(#arrowhead)" />
+                              <circle cx={x} cy={y} r="35" fill="#10b981" className="cursor-pointer hover:opacity-80" />
+                              <text x={textX} y={textY} textAnchor={x > 0 ? "start" : "end"} fill="#1f2937" className="text-xs font-medium pointer-events-none" dy="0.3em">
+                                {prereq.length > 10 ? prereq.substring(0, 10) + '...' : prereq}
+                              </text>
+                            </g>
+                          );
+                        })}
+
+                        {/* 相关知识点 - 右侧分布 */}
+                        {selectedNode.related && selectedNode.related.map((rel, idx) => {
+                          const totalRelated = selectedNode.related?.length || 1;
+                          const angle = -45 + (idx * (90 / Math.max(1, totalRelated - 1)));
+                          const rad = (angle * Math.PI) / 180;
+                          const radius = 160;
+                          const x = radius * Math.cos(rad);
+                          const y = radius * Math.sin(rad);
+                          const textX = x + (x > 0 ? 50 : -50);
+                          const textY = y;
+                          return (
+                            <g key={`rel-${idx}`}>
+                              <line x1="0" y1="0" x2={x} y2={y} stroke="#cbd5e1" strokeWidth="2" strokeDasharray="5,5" />
+                              <circle cx={x} cy={y} r="35" fill="#f59e0b" className="cursor-pointer hover:opacity-80" />
+                              <text x={textX} y={textY} textAnchor={x > 0 ? "start" : "end"} fill="#1f2937" className="text-xs font-medium pointer-events-none" dy="0.3em">
+                                {rel.length > 10 ? rel.substring(0, 10) + '...' : rel}
+                              </text>
+                            </g>
+                          );
+                        })}
+
+                        {/* 后续知识点 - 下方 */}
+                        {selectedNode.nextTopics && selectedNode.nextTopics.map((next, idx) => {
+                          const totalNext = selectedNode.nextTopics?.length || 1;
+                          const spacing = Math.min(140, 280 / totalNext);
+                          const startX = -(totalNext - 1) * spacing / 2;
+                          const x = startX + idx * spacing;
+                          const y = 150;
+                          const textX = x;
+                          const textY = y + 50;
+                          return (
+                            <g key={`next-${idx}`}>
+                              <line x1="0" y1="50" x2={x} y2={y - 35} stroke="#8b5cf6" strokeWidth="2" markerEnd="url(#arrowhead-purple)" />
+                              <circle cx={x} cy={y} r="35" fill="#8b5cf6" className="cursor-pointer hover:opacity-80" />
+                              <text x={textX} y={textY} textAnchor="middle" fill="#1f2937" className="text-xs font-medium pointer-events-none" dy="0.3em">
+                                {next.length > 10 ? next.substring(0, 10) + '...' : next}
+                              </text>
+                            </g>
+                          );
+                        })}
+
+                        {/* 箭头定义 */}
+                        <defs>
+                          <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                            <polygon points="0 0, 10 3, 0 6" fill="#10b981" />
+                          </marker>
+                          <marker id="arrowhead-purple" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                            <polygon points="0 0, 10 3, 0 6" fill="#8b5cf6" />
+                          </marker>
+                        </defs>
+                      </g>
                     </g>
                   </svg>
                   

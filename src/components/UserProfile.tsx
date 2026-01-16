@@ -22,10 +22,12 @@ function StudentDashboard({ selectedCourse, onCourseChange }: { selectedCourse: 
   const courses = ['操作系统', '数据结构', '计算机网络', '数据库原理'];
   const [showTrendChart, setShowTrendChart] = useState(false);
   const [showPersonalizedLearning, setShowPersonalizedLearning] = useState(false);
-  const [reviewStep, setReviewStep] = useState<'knowledge' | 'questions'>('knowledge');
+  const [reviewStep, setReviewStep] = useState<'overview' | 'questions'>('overview');
+  const [showOverview, setShowOverview] = useState(false);
   const [recommendedQuestions, setRecommendedQuestions] = useState<any[]>([]);
   const [selectedQuestionsToAdd, setSelectedQuestionsToAdd] = useState<number[]>([]);
   const [addedQuestions, setAddedQuestions] = useState<number[]>([]);
+  const [expandedQuestion, setExpandedQuestion] = useState<number | null>(null);
   
   // 根据课程动态生成雷达图数据
   const getRadarDataByCourse = (course: string) => {
@@ -62,12 +64,50 @@ function StudentDashboard({ selectedCourse, onCourseChange }: { selectedCourse: 
     return courseData[course] || courseData['操作系统'];
   };
 
-  const recentActivities = [
-    { date: '2月15日', activity: '提交Lab3代码', type: 'code', score: 88 },
-    { date: '2月14日', activity: '完成操作系统测验', type: 'quiz', score: 85 },
-    { date: '2月13日', activity: '提问进程调度问题', type: 'qa', replies: 3 },
-    { date: '2月12日', activity: '学习知识点：虚拟内存', type: 'knowledge', duration: 45 },
-  ];
+  // 课程活动数据映射
+  type ActivityType = 'code' | 'quiz' | 'qa' | 'knowledge';
+  interface Activity {
+    date: string;
+    activity: string;
+    type: ActivityType;
+    score?: number;
+    replies?: number;
+    duration?: number;
+  }
+
+  const courseActivitiesData: { [course: string]: Activity[] } = {
+    '操作系统': [
+      { date: '2月15日', activity: '提交Lab3代码-进程调度', type: 'code', score: 88 },
+      { date: '2月14日', activity: '完成操作系统测验', type: 'quiz', score: 85 },
+      { date: '2月13日', activity: '提问进程调度问题', type: 'qa', replies: 3 },
+      { date: '2月12日', activity: '学习知识点：虚拟内存', type: 'knowledge', duration: 45 },
+    ],
+    '数据结构': [
+      { date: '2月15日', activity: '提交二叉树作业', type: 'code', score: 92 },
+      { date: '2月13日', activity: '完成排序算法测验', type: 'quiz', score: 78 },
+      { date: '2月11日', activity: '提问红黑树问题', type: 'qa', replies: 2 },
+      { date: '2月10日', activity: '学习知识点：AVL树', type: 'knowledge', duration: 38 },
+    ],
+    '计算机网络': [
+      { date: '2月14日', activity: '提交TCP协议分析', type: 'code', score: 85 },
+      { date: '2月12日', activity: '完成网络层测验', type: 'quiz', score: 90 },
+      { date: '2月11日', activity: '提问HTTP协议问题', type: 'qa', replies: 4 },
+      { date: '2月9日', activity: '学习知识点：TCP三次握手', type: 'knowledge', duration: 52 },
+    ],
+    '数据库原理': [
+      { date: '2月15日', activity: '提交SQL查询作业', type: 'code', score: 95 },
+      { date: '2月13日', activity: '完成索引优化测验', type: 'quiz', score: 88 },
+      { date: '2月10日', activity: '提问事务隔离问题', type: 'qa', replies: 5 },
+      { date: '2月8日', activity: '学习知识点：ACID特性', type: 'knowledge', duration: 42 },
+    ],
+  };
+
+  // 根据课程获取活动数据
+  const getActivitiesByCourse = (course: string): Activity[] => {
+    return courseActivitiesData[course] || courseActivitiesData['操作系统'];
+  };
+
+  const recentActivities = getActivitiesByCourse(selectedCourse);
 
   return (
     <div className="p-6 space-y-6">
@@ -161,16 +201,18 @@ function StudentDashboard({ selectedCourse, onCourseChange }: { selectedCourse: 
             <button 
               onClick={() => {
                 setShowPersonalizedLearning(true);
-                setReviewStep('knowledge');
-                // 模拟从知识库和网络爬取题目
+                setReviewStep('overview');
+                setShowOverview(true);
+                // 3秒后收束到上方并显示题目
                 setTimeout(() => {
-                  setRecommendedQuestions([
-                    { id: 201, title: '信号量机制如何解决生产者消费者问题？', type: '选择题', knowledge: '并发控制', source: '知识库', difficulty: 'medium' },
-                    { id: 202, title: '实现一个基于信号量的线程同步程序', type: '编程题', knowledge: '并发控制', source: '网络爬取', difficulty: 'hard' },
-                    { id: 203, title: '信号量与互斥锁的区别是什么？', type: '选择题', knowledge: '并发控制', source: '知识库', difficulty: 'easy' },
-                  ]);
+                  setShowOverview(false);
                   setReviewStep('questions');
-                }, 2000);
+                  setRecommendedQuestions([
+                    { id: 201, title: '信号量机制如何解决生产者消费者问题？', type: '选择题', knowledge: '并发控制', source: '知识库', difficulty: 'medium', content: '请详细说明信号量机制在生产者消费者问题中的应用。' },
+                    { id: 202, title: '实现一个基于信号量的线程同步程序', type: '编程题', knowledge: '并发控制', source: '网络爬取', difficulty: 'hard', content: '使用信号量实现多线程同步，确保线程安全。' },
+                    { id: 203, title: '信号量与互斥锁的区别是什么？', type: '选择题', knowledge: '并发控制', source: '知识库', difficulty: 'easy', content: '请比较信号量和互斥锁的异同点。' },
+                  ]);
+                }, 3000);
               }}
               className="mt-2 w-full bg-white text-indigo-600 py-2 rounded-lg text-sm font-medium hover:bg-indigo-50 transition-colors"
             >
@@ -181,119 +223,148 @@ function StudentDashboard({ selectedCourse, onCourseChange }: { selectedCourse: 
 
         {/* 个性化学习弹窗 */}
         {showPersonalizedLearning && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-auto">
-              <div className="p-6 border-b border-slate-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-slate-900">个性化学习</h3>
-                  <button
-                    onClick={() => {
-                      setShowPersonalizedLearning(false);
-                      setReviewStep('knowledge');
-                      setRecommendedQuestions([]);
-                      setSelectedQuestionsToAdd([]);
-                    }}
-                    className="text-slate-400 hover:text-slate-600"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-6">
-                {reviewStep === 'knowledge' && (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <BookOpen className="w-8 h-8 text-indigo-600" />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white">
+            <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl border border-slate-200">
+              {/* 知识点总览弹窗 - 显示3秒后收束到上方 */}
+              {showOverview && (
+                <div className="absolute inset-0 bg-white rounded-xl flex items-center justify-center animate-fade-out" style={{ animation: 'fadeOut 0.5s ease-out 2.5s forwards' }}>
+                  <div className="text-center">
+                    <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <BookOpen className="w-10 h-10 text-white" />
                     </div>
-                    <h4 className="text-lg font-semibold text-slate-900 mb-2">正在回顾相关知识点...</h4>
-                    <p className="text-slate-600 mb-4">并发控制 · 信号量机制</p>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-3">个性化推荐知识点</h3>
+                    <div className="bg-indigo-50 rounded-lg p-6 mb-4 inline-block">
+                      <p className="text-lg font-semibold text-indigo-900">并发控制 · 信号量机制</p>
+                      <p className="text-sm text-indigo-700 mt-2">掌握度：68% | 推荐练习：3道相关题目</p>
+                    </div>
                     <div className="flex items-center justify-center gap-2 text-sm text-slate-500">
                       <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
                       <span>Agent正在从知识库和网络爬取相关题目...</span>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
+              {/* 主弹窗内容 */}
+              <div className="h-full flex flex-col">
+                {/* 收束后的知识点总览（固定在顶部） */}
                 {reviewStep === 'questions' && (
-                  <div>
-                    <div className="mb-6">
-                      <h4 className="text-lg font-semibold text-slate-900 mb-2">知识点回顾完成</h4>
-                      <p className="text-sm text-slate-600">已为你推荐以下题目，可选择添加到我的题库</p>
-                    </div>
-
-                    <div className="space-y-4 mb-6">
-                      {recommendedQuestions.map((q) => (
-                        <div key={q.id} className="bg-slate-50 rounded-lg border border-slate-200 p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <input
-                                  type="checkbox"
-                                  checked={selectedQuestionsToAdd.includes(q.id)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSelectedQuestionsToAdd([...selectedQuestionsToAdd, q.id]);
-                                    } else {
-                                      setSelectedQuestionsToAdd(selectedQuestionsToAdd.filter(id => id !== q.id));
-                                    }
-                                  }}
-                                  className="w-4 h-4 text-indigo-600"
-                                />
-                                <h5 className="font-medium text-slate-900">{q.title}</h5>
-                              </div>
-                              <div className="flex items-center gap-3 text-xs ml-6">
-                                <span className={`px-2 py-1 rounded ${
-                                  q.type === '编程题' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
-                                }`}>
-                                  {q.type}
-                                </span>
-                                <span className="text-slate-500">{q.knowledge}</span>
-                                <span className={`px-2 py-1 rounded ${
-                                  q.difficulty === 'hard' ? 'bg-red-100 text-red-700' :
-                                  q.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                                  'bg-green-100 text-green-700'
-                                }`}>
-                                  {q.difficulty === 'hard' ? '困难' : q.difficulty === 'medium' ? '中等' : '简单'}
-                                </span>
-                                <span className="text-slate-400">来源：{q.source}</span>
-                              </div>
-                            </div>
-                            {addedQuestions.includes(q.id) && (
-                              <span className="ml-4 px-3 py-1 bg-green-100 text-green-700 rounded text-xs font-medium flex items-center gap-1">
-                                <CheckCircle className="w-3 h-3" />
-                                已添加
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
+                  <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 border-b border-indigo-300">
                     <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold text-lg">并发控制 · 信号量机制</h3>
+                        <p className="text-sm opacity-90 mt-1">掌握度：68% | 推荐练习：{recommendedQuestions.length}道相关题目</p>
+                      </div>
                       <button
                         onClick={() => {
                           setShowPersonalizedLearning(false);
-                          setReviewStep('knowledge');
+                          setReviewStep('overview');
+                          setShowOverview(false);
                           setRecommendedQuestions([]);
                           setSelectedQuestionsToAdd([]);
+                          setExpandedQuestion(null);
                         }}
-                        className="px-6 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50"
+                        className="text-white hover:text-indigo-200"
                       >
-                        关闭
+                        <X className="w-6 h-6" />
                       </button>
-                      <button
-                        onClick={() => {
-                          setAddedQuestions([...addedQuestions, ...selectedQuestionsToAdd]);
-                          setSelectedQuestionsToAdd([]);
-                          alert(`已成功将 ${selectedQuestionsToAdd.length} 道题目添加到我的题库`);
-                        }}
-                        disabled={selectedQuestionsToAdd.length === 0}
-                        className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        添加到我的题库 ({selectedQuestionsToAdd.length})
-                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 题目列表区域 */}
+                {reviewStep === 'questions' && (
+                  <div className="flex-1 overflow-y-auto p-6">
+                    <div className="space-y-4">
+                      {recommendedQuestions.map((q) => (
+                        <div key={q.id} className="bg-white rounded-lg border-2 border-slate-200 hover:border-indigo-300 transition-colors">
+                          <div className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <h5 className="font-semibold text-slate-900 text-lg">{q.title}</h5>
+                                  <span className={`px-2 py-1 rounded text-xs ${
+                                    q.type === '编程题' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                                  }`}>
+                                    {q.type}
+                                  </span>
+                                  <span className={`px-2 py-1 rounded text-xs ${
+                                    q.difficulty === 'hard' ? 'bg-red-100 text-red-700' :
+                                    q.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-green-100 text-green-700'
+                                  }`}>
+                                    {q.difficulty === 'hard' ? '困难' : q.difficulty === 'medium' ? '中等' : '简单'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-3 text-sm text-slate-600 mb-3">
+                                  <span>{q.knowledge}</span>
+                                  <span>·</span>
+                                  <span>来源：{q.source}</span>
+                                </div>
+                                
+                                {/* 展开的题目详情 */}
+                                {expandedQuestion === q.id && (
+                                  <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                    <p className="text-sm text-slate-700 mb-4">{q.content}</p>
+                                    <div className="flex items-center gap-3">
+                                      <button
+                                        onClick={() => {
+                                          // 跳转到智能问答
+                                          window.location.href = '#qa';
+                                        }}
+                                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium flex items-center gap-2"
+                                      >
+                                        <MessageSquare className="w-4 h-4" />
+                                        到智能问答
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          if (!addedQuestions.includes(q.id)) {
+                                            setAddedQuestions([...addedQuestions, q.id]);
+                                            alert('已添加到我的题库');
+                                          }
+                                        }}
+                                        disabled={addedQuestions.includes(q.id)}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${
+                                          addedQuestions.includes(q.id)
+                                            ? 'bg-green-100 text-green-700 cursor-not-allowed'
+                                            : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                                        }`}
+                                      >
+                                        {addedQuestions.includes(q.id) ? (
+                                          <>
+                                            <CheckCircle className="w-4 h-4" />
+                                            已添加
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Plus className="w-4 h-4" />
+                                            添加进我的题库
+                                          </>
+                                        )}
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="ml-4 flex flex-col gap-2">
+                                <button
+                                  onClick={() => {
+                                    if (expandedQuestion === q.id) {
+                                      setExpandedQuestion(null);
+                                    } else {
+                                      setExpandedQuestion(q.id);
+                                    }
+                                  }}
+                                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium whitespace-nowrap"
+                                >
+                                  {expandedQuestion === q.id ? '收起' : '开始做题'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -318,43 +389,50 @@ function StudentDashboard({ selectedCourse, onCourseChange }: { selectedCourse: 
       <div className="bg-white rounded-lg p-6 border border-slate-200">
         <h4 className="font-semibold text-slate-900 mb-4">近期活动时间线</h4>
         <div className="space-y-4">
-          {recentActivities.map((activity, index) => {
-            const icons = {
-              code: Code,
-              quiz: FileText,
-              qa: MessageSquare,
-              knowledge: BookOpen,
-            };
-            const Icon = icons[activity.type as keyof typeof icons];
-            
-            return (
-              <div key={index} className="flex gap-4">
-                <div className="flex flex-col items-center">
-                  <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                    <Icon className="w-5 h-5 text-indigo-600" />
+          {recentActivities.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">
+              <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">暂无{selectedCourse}课程的活动记录</p>
+            </div>
+          ) : (
+            recentActivities.map((activity, index) => {
+              const icons = {
+                code: Code,
+                quiz: FileText,
+                qa: MessageSquare,
+                knowledge: BookOpen,
+              };
+              const Icon = icons[activity.type as keyof typeof icons];
+
+              return (
+                <div key={index} className="flex gap-4">
+                  <div className="flex flex-col items-center">
+                    <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    {index < recentActivities.length - 1 && (
+                      <div className="w-px h-8 bg-slate-200 my-1"></div>
+                    )}
                   </div>
-                  {index < recentActivities.length - 1 && (
-                    <div className="w-px h-8 bg-slate-200 my-1"></div>
-                  )}
-                </div>
-                <div className="flex-1 pb-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm text-slate-500">{activity.date}</span>
-                    <span className="text-sm font-medium text-slate-900">{activity.activity}</span>
+                  <div className="flex-1 pb-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm text-slate-500">{activity.date}</span>
+                      <span className="text-sm font-medium text-slate-900">{activity.activity}</span>
+                    </div>
+                    {'score' in activity && (
+                      <span className="text-sm text-slate-600">得分: {activity.score}/100</span>
+                    )}
+                    {'replies' in activity && (
+                      <span className="text-sm text-slate-600">获得 {activity.replies} 条回复</span>
+                    )}
+                    {'duration' in activity && (
+                      <span className="text-sm text-slate-600">学习时长: {activity.duration}分钟</span>
+                    )}
                   </div>
-                  {'score' in activity && (
-                    <span className="text-sm text-slate-600">得分: {activity.score}/100</span>
-                  )}
-                  {'replies' in activity && (
-                    <span className="text-sm text-slate-600">获得 {activity.replies} 条回复</span>
-                  )}
-                  {'duration' in activity && (
-                    <span className="text-sm text-slate-600">学习时长: {activity.duration}分钟</span>
-                  )}
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
     </div>

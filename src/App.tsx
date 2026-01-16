@@ -157,7 +157,7 @@ export default function App() {
         </div>
 
         {/* 导航菜单 */}
-        <nav className="p-2 space-y-1">
+        <nav className="p-2 space-y-1 flex-1">
           {modules.map((module) => {
             const Icon = module.icon;
             return (
@@ -177,34 +177,32 @@ export default function App() {
             );
           })}
         </nav>
-      </aside>
 
-      {/* 主内容区 */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* 顶部导航栏 */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center px-6 gap-4">
+        {/* 搜索框和用户信息区域 */}
+        <div className="border-t border-slate-200 p-2 space-y-2">
           {/* 全局搜索框 */}
-          <div className="flex-1 max-w-2xl">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input
-                type="text"
-                placeholder="全局检索知识点、问题、代码..."
-                className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder={sidebarCollapsed ? "" : "全局检索..."}
+              className={`w-full ${sidebarCollapsed ? 'pl-9 pr-2' : 'pl-9 pr-3'} py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm`}
+            />
           </div>
 
           {/* 用户头像和菜单 */}
           <div className="relative group">
-            <button className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50">
-              <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+            <button className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-2 px-2'} py-2 rounded-lg hover:bg-slate-50 transition-colors`}>
+              <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
                 <User className="w-5 h-5 text-indigo-600" />
               </div>
+              {!sidebarCollapsed && (
+                <span className="text-sm text-slate-700 font-medium truncate">张三</span>
+              )}
             </button>
             
-            {/* 下拉菜单 */}
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+            {/* 向上显示的下拉菜单 */}
+            <div className={`absolute ${sidebarCollapsed ? 'left-full ml-2' : 'left-0'} bottom-full mb-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50`}>
               <button
                 onClick={() => setIsTeacher(!isTeacher)}
                 className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 flex items-center justify-between"
@@ -229,6 +227,13 @@ export default function App() {
               </button>
             </div>
           </div>
+        </div>
+      </aside>
+
+      {/* 主内容区 */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* 顶部导航栏 - 已移除搜索框和用户头像 */}
+        <header className="h-16 bg-white border-b border-slate-200">
         </header>
 
         {/* 主内容 */}

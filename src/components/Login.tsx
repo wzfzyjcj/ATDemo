@@ -78,10 +78,10 @@ export default function Login({ onLogin }: LoginProps) {
           </div>
 
           {/* 登录表单 */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* 用户名输入 */}
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-slate-700 mb-2">
+            <div className="space-y-2">
+              <label htmlFor="username" className="block text-sm font-medium text-slate-700">
                 用户名 / 学号
               </label>
               <div className="relative">
@@ -93,7 +93,7 @@ export default function Login({ onLogin }: LoginProps) {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   placeholder={role === 'student' ? '请输入学号' : '请输入工号'}
                   required
                 />
@@ -101,8 +101,8 @@ export default function Login({ onLogin }: LoginProps) {
             </div>
 
             {/* 密码输入 */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
+            <div className="space-y-2">
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700">
                 密码
               </label>
               <div className="relative">
@@ -114,14 +114,14 @@ export default function Login({ onLogin }: LoginProps) {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full pl-10 pr-12 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   placeholder="请输入密码"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center hover:bg-slate-50 rounded-r-lg transition-colors"
                 >
                   {showPassword ? (
                     <EyeOff className="w-5 h-5 text-slate-400 hover:text-slate-600" />
@@ -133,12 +133,19 @@ export default function Login({ onLogin }: LoginProps) {
             </div>
 
             {/* 记住密码和忘记密码 */}
-            <div className="flex items-center justify-between">
-              <label className="flex items-center">
-                <input type="checkbox" className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500" />
-                <span className="ml-2 text-sm text-slate-600">记住密码</span>
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center cursor-pointer group">
+                <input 
+                  type="checkbox" 
+                  className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer" 
+                />
+                <span className="ml-2 text-sm text-slate-600 group-hover:text-slate-900 transition-colors">记住密码</span>
               </label>
-              <a href="#" className="text-sm text-indigo-600 hover:text-indigo-700">
+              <a 
+                href="#" 
+                className="text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-all"
+                onClick={(e) => e.preventDefault()}
+              >
                 忘记密码？
               </a>
             </div>
